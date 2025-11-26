@@ -1,0 +1,28 @@
+/* CÓDIGO CSS SOLAMENTE: styles.css */
+
+/* Estilo para ajustar el texto del caption del carrusel */
+.slide-overlay-html {
+    /* Ajustes para el fondo del texto si es necesario, aunque Bootstrap ya usa un degradado */
+    background: rgba(0, 0, 0, 0.5); 
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    bottom: 20px; /* Elevar un poco la posición */
+    text-align: center;
+}
+
+/* Estilo para las estrellas de rating */
+.rating-star {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.rating-star:hover, .rating-star.active {
+    color: #ffc107; /* Color amarillo de Bootstrap */
+}
+
+.product-image {
+    width: 100%; /* Ocupa todo el ancho de la tarjeta */
+    height: 180px; /* Altura fija para todas las imágenes */
+    object-fit: cover; /* Asegura que la imagen llene el espacio sin distorsión, recortando los bordes si es necesario */
+    border-top-left-radius: var(--bs-card-border-radius); /* Mantiene el borde superior redondeado de Bootstrap */
+    border-top-right-radius: var(--bs-card-border-radius);
+}
