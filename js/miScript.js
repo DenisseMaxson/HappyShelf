@@ -2,18 +2,18 @@
 
 
 const PRODUCTOS = [
-    { id: 1, name: "Consola PS4 Death Stranding", category: "consolas", price: 4200.00, desc: "Consola playstation 4 edicion especial death stranding", image: "/images/dsps4.png" },
-    { id: 2, name: "Si el amor es una isla", category: "libros", price: 350.50, desc: "Edición de tapa dura con ilustraciones.", image: "/images/amorisla.jpg" },
-    { id: 3, name: "Kit de Inicio para Amigurumis", category: "crochet", price: 349.99, desc: "Incluye 5 colores de lana, agujas y patrón.", image: "/images/kitcrochet.jpg" },
-    { id: 4, name: "Figura Coleccionable: Higgs Monaghan", category: "coleccionables", price: 7345.00, desc: "Edición limitada de Higgs Monaghan.", image: "/images/higgsfigure.png" },
-    { id: 5, name: "Controlador Inalámbrico 2077", category: "videojuegos", price: 2499.90, desc: "Diseño ergonómico para largas sesiones de juego.", image: "/images/cyberpunkcontrol.jpg" }, 
-    { id: 6, name: "Tejer sin Límites: Patrones Modernos", category: "libros", price: 220.00, desc: "Libro de patrones de nivel intermedio.", image: "/images/librocrochet.png" },
-    { id: 7, name: "Mochis sabor taro", category: "snacks", price: 50.50, desc: "Un bocado exotico y dulce para tus tardes de peliculas.", image: "/images/mochis.jpg" },
-    { id: 8, name: "Libros de harry potter", category: "libros", price: 50.50, desc: "La serie completa de los libros de esta magica aventura", image: "/images/PotterBooks.jpg" },
-    { id: 9, name: "Funko pop de Takemura", category: "coleccionables", price: 50.50, desc: "Figura coleccionable del personaje Takemura.", image: "/images/takemurafunko.png" },
-    { id: 10, name: "Pockys cookies and cream", category: "snacks", price: 50.50, desc: "Dulces bocadillos de galleta cubiertos de cookies and cream.", image: "/images/PockyCC.png" },
-    { id: 11, name: "Ramen carbonara", category: "snacks", price: 50.50, desc: "Un bocado exotico y dulce para tus tardes de peliculas.", image: "/images/carbonara.jpg" },
-    { id: 12, name: "Mochis sabor taro", category: "snacks", price: 50.50, desc: "Un bocado exotico y dulce para tus tardes de peliculas.", image: "/images/mochis.jpg" }
+    { id: 1, name: "Consola PS4 Death Stranding", category: "consolas", price: 4200.00, desc: "Consola playstation 4 edicion especial death stranding", image: "./images/dsps4.png" },
+    { id: 2, name: "Si el amor es una isla", category: "libros", price: 350.50, desc: "Edición de tapa dura con ilustraciones.", image: "./images/amorisla.jpg" },
+    { id: 3, name: "Kit de Inicio para Amigurumis", category: "crochet", price: 349.99, desc: "Incluye 5 colores de lana, agujas y patrón.", image: "./images/kitcrochet.jpg" },
+    { id: 4, name: "Figura Coleccionable: Higgs Monaghan", category: "coleccionables", price: 7345.00, desc: "Edición limitada de Higgs Monaghan.", image: "./images/higgsfigure.png" },
+    { id: 5, name: "Controlador Inalámbrico 2077", category: "videojuegos", price: 2499.90, desc: "Diseño ergonómico para largas sesiones de juego.", image: "./images/cyberpunkcontrol.jpg" }, 
+    { id: 6, name: "Tejer sin Límites: Patrones Modernos", category: "libros", price: 220.00, desc: "Libro de patrones de nivel intermedio.", image: "./images/librocrochet.png" },
+    { id: 7, name: "Mochis sabor taro", category: "snacks", price: 50.50, desc: "Un bocado exotico y dulce para tus tardes de peliculas.", image: "./images/mochis.jpg" },
+    { id: 8, name: "Libros de harry potter", category: "libros", price: 50.50, desc: "La serie completa de los libros de esta magica aventura", image: "./images/PotterBooks.jpg" },
+    { id: 9, name: "Funko pop de Takemura", category: "coleccionables", price: 50.50, desc: "Figura coleccionable del personaje Takemura.", image: "./images/takemurafunko.png" },
+    { id: 10, name: "Pockys cookies and cream", category: "snacks", price: 50.50, desc: "Dulces bocadillos de galleta cubiertos de cookies and cream.", image: "./images/PockyCC.png" },
+    { id: 11, name: "Mochis sabor taro", category: "snacks", price: 50.50, desc: "Un bocado exotico y dulce para tus tardes de peliculas.", image: "./images/mochis.jpg" },
+    { id: 12, name: "Mochis sabor taro", category: "snacks", price: 50.50, desc: "Un bocado exotico y dulce para tus tardes de peliculas.", image: "./images/mochis.jpg" }
 ];
 
 // Variables de estado (sin variables manuales para el carrusel)
@@ -49,8 +49,12 @@ async function fetchRAWGProducts() {
         // Asegúrate de que tu array PRODUCTOS sea global o usa una función para actualizarlo.
         PRODUCTOS.push(...nuevosVideojuegos); 
         
+        // Llama a la función que redibuja tus productos, por ejemplo:
         renderFeaturedProducts(); // <--- LLAMAR AQUÍ PARA ACTUALIZAR HOME
         applyFilters(); // <--- LLAMAR AQUÍ PARA ACTUALIZAR CATÁLOGO
+        
+        // Llama a la función que redibuja tus productos, por ejemplo:
+        // renderProducts(PRODUCTOS); 
 
     } catch (error) {
         console.error("Error al cargar videojuegos de RAWG:", error);
@@ -199,7 +203,7 @@ function handleLogin(e) {
     const username = document.getElementById('login-username').value;
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userName', username.split('@')[0]);
-    localStorage.setItem('userEmail', username); 
+    localStorage.setItem('userEmail', username); // Simulado
     updateAuthUI();
     showSystemMessage(`¡Bienvenido de nuevo, ${username.split('@')[0]}!`, false);
     window.location.hash = '#home';
@@ -285,7 +289,7 @@ function handleCategoryClick(category) {
     setTimeout(() => {
         const filterSelect = document.getElementById('filter-category');
         if (filterSelect) {
-
+            // Asegurarse de que el valor exista antes de asignarlo
             if ([...filterSelect.options].map(o => o.value).includes(category)) {
                  filterSelect.value = category;
             } else {
