@@ -13,7 +13,12 @@ const PRODUCTOS = [
     { id: 9, name: "Funko pop de Takemura", category: "coleccionables", price: 50.50, desc: "Figura coleccionable del personaje Takemura.", image: "./images/takemurafunko.png" },
     { id: 10, name: "Pockys cookies and cream", category: "snacks", price: 50.50, desc: "Dulces bocadillos de galleta cubiertos de cookies and cream.", image: "./images/PockyCC.png" },
     { id: 11, name: "Buldak carbonara", category: "snacks", price: 50.50, desc: "Ramen delicioso y picante sabor carbonara.", image: "./images/carbonara.jpg" },
-    { id: 12, name: "Xenomorph doll", category: "coleccionables", price: 700.00, desc: "Monster high skullector alien.", image: "./images/alienmh.png" }
+    { id: 12, name: "Xenomorph doll", category: "coleccionables", price: 700.00, desc: "Monster high skullector alien.", image: "./images/alienmh.png" },
+    { id: 13, name: "Consola SNES Classic Edition", category: "consolas", price: 1200.00, desc: "Mini-consola con 21 juegos clásicos preinstalados.", image: "./images/snes.png" },
+    { id: 14, name: "Lana Merino Extra Suave (Rojo)", category: "crochet", price: 150.00, desc: "Madeja de lana merino de 100g, ideal para proyectos delicados.", image: "./images/lana.png" },
+    { id: 15, name: "El Señor de los Anillos: La Comunidad del Anillo", category: "libros", price: 499.00, desc: "Primera parte de la épica saga de J.R.R. Tolkien.", image: "./images/lotr.png" },
+    { id: 16, name: "Peluche Coleccionable de Pikachu", category: "coleccionables", price: 650.00, desc: "Peluche grande y suave de la mascota icónica de Pokémon.", image: "./images/pikachu.png" },
+    { id: 17, name: "Barrita de Matcha y Arroz Inflado", category: "snacks", price: 35.00, desc: "Snack energético japonés con té matcha.", image: "./images/matcha_bar.png"}
 ];
 
 // Variables de estado (sin variables manuales para el carrusel)
@@ -143,6 +148,51 @@ function createProductCard(product) {
 function renderFeaturedProducts() {
     const container = document.getElementById('featured-products-container');
     container.innerHTML = PRODUCTOS.slice(0, 4).map(createProductCard).join('');
+}
+
+function renderProductDetail(productId) {
+    // Buscar el producto en el array global PRODUCTOS
+    const product = PRODUCTOS.find(p => p.id == productId);
+
+    if (!product) {
+        showSystemMessage('Producto no encontrado.', true);
+        window.location.hash = '#catalogo';
+        return;
+    }
+
+    // 1. Actualizar los elementos con la información del producto
+    document.getElementById('detalle-image').src = product.image || PLACEHOLDER_IMAGE;
+    document.getElementById('detalle-image').alt = product.name;
+    document.getElementById('detalle-category').textContent = product.category.toUpperCase();
+    document.getElementById('detalle-title').textContent = product.name;
+    document.getElementById('detalle-price').textContent = `$${product.price.toFixed(2)}`;
+    document.getElementById('detalle-description').textContent = product.desc;
+    
+    // Si es un producto de RAWG (videojuego), mostramos info extra
+    if (String(product.id).startsWith('RAWG')) {
+        const released = product.released || 'N/A';
+        document.getElementById('detalle-api-info').innerHTML = `Juego obtenido de la API externa de RAWG. **Fecha de lanzamiento:** ${released}`;
+    } else {
+        document.getElementById('detalle-api-info').textContent = "Producto de nuestro inventario principal. Calidad garantizada.";
+    }
+
+    // 2. Enlazar la función de compra al botón de la página de detalle
+    document.getElementById('add-to-cart').onclick = () => simulateAddToCart(null, productId);
+    
+    // 3. Reiniciar la funcionalidad de rating
+    const ratingStars = document.querySelectorAll('#rating-stars .rating-star');
+    ratingStars.forEach(star => {
+        star.classList.remove('active', 'text-warning');
+        star.classList.add('text-muted');
+        // Asegurar que solo se añada una vez para evitar múltiples manejadores
+        if (!star.dataset.listenerAdded) {
+            star.addEventListener('click', function() {
+                handleRating(parseInt(this.dataset.rating), ratingStars);
+            });
+            star.dataset.listenerAdded = 'true';
+        }
+    });
+    document.getElementById('rating-message').textContent = 'Haz clic en una estrella para votar.';
 }
 
 

@@ -26,3 +26,15 @@
     border-top-left-radius: var(--bs-card-border-radius); /* Mantiene el borde superior redondeado de Bootstrap */
     border-top-right-radius: var(--bs-card-border-radius);
 }
+
+body {
+     font-family: 'Inter', sans-serif;
+}
+
+.slide-overlay-html {
+    background: rgba(0, 0, 0, 0.5); 
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    bottom: 20px;
+    text-align: center;
+}
