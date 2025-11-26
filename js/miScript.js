@@ -12,7 +12,7 @@ const PRODUCTOS = [
     { id: 8, name: "Libros de harry potter", category: "libros", price: 50.50, desc: "La serie completa de los libros de esta magica aventura", image: "/images/PotterBooks.jpg" },
     { id: 9, name: "Funko pop de Takemura", category: "coleccionables", price: 50.50, desc: "Figura coleccionable del personaje Takemura.", image: "/images/takemurafunko.png" },
     { id: 10, name: "Pockys cookies and cream", category: "snacks", price: 50.50, desc: "Dulces bocadillos de galleta cubiertos de cookies and cream.", image: "/images/PockyCC.png" },
-    { id: 11, name: "Mochis sabor taro", category: "snacks", price: 50.50, desc: "Un bocado exotico y dulce para tus tardes de peliculas.", image: "/images/mochis.jpg" },
+    { id: 11, name: "Ramen carbonara", category: "snacks", price: 50.50, desc: "Un bocado exotico y dulce para tus tardes de peliculas.", image: "/images/carbonara.jpg" },
     { id: 12, name: "Mochis sabor taro", category: "snacks", price: 50.50, desc: "Un bocado exotico y dulce para tus tardes de peliculas.", image: "/images/mochis.jpg" }
 ];
 
@@ -49,12 +49,8 @@ async function fetchRAWGProducts() {
         // Asegúrate de que tu array PRODUCTOS sea global o usa una función para actualizarlo.
         PRODUCTOS.push(...nuevosVideojuegos); 
         
-        // Llama a la función que redibuja tus productos, por ejemplo:
         renderFeaturedProducts(); // <--- LLAMAR AQUÍ PARA ACTUALIZAR HOME
         applyFilters(); // <--- LLAMAR AQUÍ PARA ACTUALIZAR CATÁLOGO
-        
-        // Llama a la función que redibuja tus productos, por ejemplo:
-        // renderProducts(PRODUCTOS); 
 
     } catch (error) {
         console.error("Error al cargar videojuegos de RAWG:", error);
@@ -203,7 +199,7 @@ function handleLogin(e) {
     const username = document.getElementById('login-username').value;
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userName', username.split('@')[0]);
-    localStorage.setItem('userEmail', username); // Simulado
+    localStorage.setItem('userEmail', username); 
     updateAuthUI();
     showSystemMessage(`¡Bienvenido de nuevo, ${username.split('@')[0]}!`, false);
     window.location.hash = '#home';
@@ -289,7 +285,7 @@ function handleCategoryClick(category) {
     setTimeout(() => {
         const filterSelect = document.getElementById('filter-category');
         if (filterSelect) {
-            // Asegurarse de que el valor exista antes de asignarlo
+
             if ([...filterSelect.options].map(o => o.value).includes(category)) {
                  filterSelect.value = category;
             } else {
