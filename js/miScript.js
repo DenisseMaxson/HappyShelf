@@ -12,8 +12,8 @@ const PRODUCTOS = [
     { id: 8, name: "Libros de harry potter", category: "libros", price: 50.50, desc: "La serie completa de los libros de esta magica aventura", image: "./images/PotterBooks.jpg" },
     { id: 9, name: "Funko pop de Takemura", category: "coleccionables", price: 50.50, desc: "Figura coleccionable del personaje Takemura.", image: "./images/takemurafunko.png" },
     { id: 10, name: "Pockys cookies and cream", category: "snacks", price: 50.50, desc: "Dulces bocadillos de galleta cubiertos de cookies and cream.", image: "./images/PockyCC.png" },
-    { id: 11, name: "Mochis sabor taro", category: "snacks", price: 50.50, desc: "Un bocado exotico y dulce para tus tardes de peliculas.", image: "./images/mochis.jpg" },
-    { id: 12, name: "Mochis sabor taro", category: "snacks", price: 50.50, desc: "Un bocado exotico y dulce para tus tardes de peliculas.", image: "./images/mochis.jpg" }
+    { id: 11, name: "Buldak carbonara", category: "snacks", price: 50.50, desc: "Ramen delicioso y picante sabor carbonara.", image: "./images/carbonara.jpg" },
+    { id: 12, name: "Xenomorph doll", category: "coleccionables", price: 700.00, desc: "Monster high skullector alien.", image: "./images/alienmh.png" }
 ];
 
 // Variables de estado (sin variables manuales para el carrusel)
