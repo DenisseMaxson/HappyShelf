@@ -23,407 +23,303 @@ const PRODUCTOS = [
 const RAWG_API_KEY = "440d1bf1d0fc4b8ab796d650dce689bb"; 
 const PLACEHOLDER_IMAGE = "https://placehold.co/300x180?text=No+Image";
 
-// Carga los usuarios guardados o crea uno por defecto para prueba
-let USUARIOS_REGISTRADOS = loadUsersFromStorage();
+// Cargar usuarios de localStorage o iniciar vacío
+let USUARIOS_REGISTRADOS = JSON.parse(localStorage.getItem('registeredUsers')) || [];
 
-// Variables de estado global
-let isLoggedIn = false;
-let currentUserName = 'Invitado';
 
-// --- FUNCIONES DE AUTENTICACIÓN Y LOCALSTORAGE (SIMPLIFICADAS) ---
+// --- INICIALIZACIÓN Y DETECCIÓN DE PÁGINA ---
+document.addEventListener('DOMContentLoaded', () => {
+    updateAuthUI(); 
 
-// Se simplifica para cargar solo lo que existe o un array vacío
-function loadUsersFromStorage() {
-    try {
-        const users = JSON.parse(localStorage.getItem('registeredUsers'));
-        return users && users.length > 0 ? users : []; // No hay usuario por defecto
-    } catch (e) {
-        console.error("Error cargando usuarios:", e);
-        return [];
+    const path = window.location.pathname;
+
+    // --- LÓGICA PARA INDEX.HTML (INICIO) ---
+    if (path.includes('index.html') || path.endsWith('/')) {
+        // Cargar productos externos solo para tener variedad
+        fetchRAWGProducts().then(() => renderFeaturedProducts());
+    }
+
+    // --- LÓGICA PARA CATALOGO.HTML ---
+    if (path.includes('catalogo.html')) {
+        fetchRAWGProducts().then(() => {
+            // Revisar parámetros URL (ej: catalogo.html?id=1)
+            const urlParams = new URLSearchParams(window.location.search);
+            const productId = urlParams.get('id');
+            const catFilter = urlParams.get('cat');
+
+            if (productId) {
+                // Si hay ID en la URL, mostrar vista detalle
+                renderProductDetail(productId);
+            } else {
+                // Si no, mostrar vista grilla normal
+                const catalogoView = document.getElementById('catalogo-view');
+                const detalleView = document.getElementById('detalle-view');
+                
+                if(catalogoView) catalogoView.classList.remove('d-none');
+                if(detalleView) detalleView.classList.add('d-none');
+                
+                // Si viene del carrusel con filtro
+                if(catFilter) {
+                    const select = document.getElementById('filter-category');
+                    if(select) { select.value = catFilter; }
+                }
+                applyFilters();
+            }
+        });
+    }
+
+    // --- LÓGICA PARA LOGIN.HTML ---
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        // Escuchar envío del Login
+        loginForm.addEventListener('submit', handleLogin);
+        
+        // Escuchar envío del Registro
+        const registerForm = document.getElementById('register-form');
+        if(registerForm) registerForm.addEventListener('submit', handleRegister);
+        
+        // Alternar entre Login y Registro
+        document.getElementById('show-register-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('login-form-container').classList.add('d-none');
+            document.getElementById('register-form-container').classList.remove('d-none');
+            clearSystemMessage(); // Limpiar mensajes viejos
+        });
+        
+        document.getElementById('show-login-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('register-form-container').classList.add('d-none');
+            document.getElementById('login-form-container').classList.remove('d-none');
+            clearSystemMessage();
+        });
+    }
+
+    // --- LÓGICA PARA PERFIL.HTML ---
+    if (path.includes('perfil.html')) {
+        // Redirección de seguridad si no está logueado
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    }
+});
+
+//  FUNCIONES DE AUTENTICACIÓN 
+
+function showAuthMessage(mensaje, tipo) {
+    const msgDiv = document.getElementById('system-message');
+    if (msgDiv) {
+        msgDiv.textContent = mensaje;
+        // Tipos: 'success' (verde), 'danger' (rojo), 'warning' (amarillo)
+        msgDiv.className = `alert alert-${tipo} mb-3 shadow-sm`; 
+        msgDiv.classList.remove('d-none');
     }
 }
 
-function saveUsersToStorage() {
-    localStorage.setItem('registeredUsers', JSON.stringify(USUARIOS_REGISTRADOS));
+// Helper para limpiar mensaje
+function clearSystemMessage() {
+    const msgDiv = document.getElementById('system-message');
+    if (msgDiv) msgDiv.classList.add('d-none');
 }
 
-// Se simplifica: solo revisa si hay sesión activa y obtiene el nombre
-function updateAuthUI() {
-    isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    currentUserName = localStorage.getItem('userName') || 'Invitado';
-
-    // Usar d-none para ocultar/mostrar elementos de Bootstrap
-    document.getElementById('auth-links-logged-in').classList.toggle('d-none', !isLoggedIn);
-    document.getElementById('auth-links-logged-out').classList.toggle('d-none', isLoggedIn);
-    document.getElementById('nav-perfil').classList.toggle('d-none', !isLoggedIn);
-
-    const greetingEl = document.getElementById('user-greeting');
-    if (greetingEl) {
-        greetingEl.textContent = `Hola, ${currentUserName}`;
-    }
-}
-
+// 1. Manejar LOGIN
 function handleLogin(e) {
     e.preventDefault();
-    const emailInput = document.getElementById('login-username').value;
-    const passwordInput = document.getElementById('login-password').value; 
+    const email = document.getElementById('login-username').value;
+    const pass = document.getElementById('login-password').value;
     
-    if (!emailInput || !passwordInput) {
-        showSystemMessage('Por favor, ingresa tu email y contraseña.', true);
-        return;
-    }
-    
-    // Búsqueda simple por email y contraseña
-    const user = USUARIOS_REGISTRADOS.find(u => u.email === emailInput && u.password === passwordInput);
-    
+    // Buscar usuario
+    const user = USUARIOS_REGISTRADOS.find(u => u.email === email && u.password === pass);
+
     if (user) {
-        // Login Exitoso
+        // Guardar sesión
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userName', user.name);
         localStorage.setItem('userEmail', user.email);
         
-        updateAuthUI();
-        showSystemMessage(`¡Bienvenido de nuevo, ${user.name}!`, false);
-        // Limpiar formulario
-        document.getElementById('login-form').reset();
-        window.location.hash = '#home';
+        // Mensaje Verde
+        showAuthMessage(`¡Hola de nuevo, ${user.name}! Redirigiendo...`, 'success');
+        
+        // Esperar 1.5s y redirigir al Home
+        setTimeout(() => {
+            window.location.href = 'index.html'; 
+        }, 1500);
+
     } else {
-        // Login Fallido
-        showSystemMessage('Credenciales inválidas. Verifica tu email y contraseña. ¿Te registraste?', true);
+        // Mensaje Rojo
+        showAuthMessage('Correo o contraseña incorrectos.', 'danger');
     }
 }
 
+// 2. Manejar REGISTRO
 function handleRegister(e) {
     e.preventDefault();
-    const emailInput = document.getElementById('register-username').value;
-    const passwordInput = document.getElementById('register-password').value; 
-    const userName = emailInput.split('@')[0];
-
-    if (!emailInput || !passwordInput) {
-        showSystemMessage('Por favor, ingresa un email y una contraseña.', true);
-        return;
-    }
-
-    if (USUARIOS_REGISTRADOS.find(u => u.email === emailInput)) {
-        showSystemMessage('Ese email ya está registrado. Intenta iniciar sesión.', true);
-        return;
-    }
-
-    // Agregar nuevo usuario y guardar
-    const newUser = { email: emailInput, password: passwordInput, name: userName };
-    USUARIOS_REGISTRADOS.push(newUser);
-    saveUsersToStorage();
+    const email = document.getElementById('register-username').value;
+    const pass = document.getElementById('register-password').value;
     
-    // Limpiar formulario de registro
+    // Validar si ya existe
+    const existe = USUARIOS_REGISTRADOS.find(u => u.email === email);
+    
+    if (existe) {
+        showAuthMessage('Este correo ya está registrado. Intenta iniciar sesión.', 'warning');
+        return;
+    }
+
+    // Crear y guardar
+    const nombre = email.split('@')[0];
+    USUARIOS_REGISTRADOS.push({ email, password: pass, name: nombre });
+    localStorage.setItem('registeredUsers', JSON.stringify(USUARIOS_REGISTRADOS));
+    
+    // Mensaje Verde
+    showAuthMessage('¡Cuenta creada con éxito! Ahora inicia sesión.', 'success');
+    
+    // Resetear form y volver al login automáticamente tras 2 segundos
     document.getElementById('register-form').reset();
-    
-    // No hay inicio de sesión automático, se redirige al login
-    showSystemMessage(`¡Registro exitoso para ${userName}! Ahora inicia sesión con tu nueva cuenta.`, false);
-    document.getElementById('register-form-container').classList.add('d-none');
-    document.getElementById('login-form-container').classList.remove('d-none'); // Mostrar login
+    setTimeout(() => {
+        document.getElementById('register-form-container').classList.add('d-none');
+        document.getElementById('login-form-container').classList.remove('d-none');
+        clearSystemMessage(); // Limpiar el mensaje de éxito para que el login se vea limpio
+    }, 2000);
 }
 
+// 3. Manejar LOGOUT
 function handleLogout() {
-    // Eliminar todas las claves de sesión
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
-    
-    updateAuthUI();
-    showSystemMessage('Sesión cerrada. ¡Vuelve pronto!', false);
-    window.location.hash = '#auth'; 
+    window.location.href = 'index.html'; // Volver al inicio
 }
 
-function showRegisterForm(e) {
-    e.preventDefault();
-    document.getElementById('login-form-container').classList.add('d-none');
-    document.getElementById('register-form-container').classList.remove('d-none');
-}
-
-function showLoginForm(e) {
-    e.preventDefault();
-    document.getElementById('register-form-container').classList.add('d-none');
-    document.getElementById('login-form-container').classList.remove('d-none');
-}
-
-// --- FUNCIONES DE UTILIDAD GENERAL ---
-
-function showSystemMessage(message, isError = false) {
-  const msgEl = document.getElementById('system-message');
-    if (!msgEl) return;
+// 4. Actualizar Interfaz según estado
+function updateAuthUI() {
+    const isLog = localStorage.getItem('isLoggedIn') === 'true';
+    const name = localStorage.getItem('userName') || 'Invitado';
     
-    msgEl.textContent = message;
-    
-    // Clases Bootstrap para alerts
-    const alertClass = isError ? 'alert-danger text-danger bg-danger-subtle' : 'alert-success text-success bg-success-subtle';
+    const loggedInDiv = document.getElementById('auth-links-logged-in');
+    const loggedOutDiv = document.getElementById('auth-links-logged-out');
+    const navPerfil = document.getElementById('nav-perfil');
 
-    // Se asignan las clases completas de Bootstrap
-    msgEl.className = `fixed-top end-0 mt-5 me-4 p-3 rounded shadow ${alertClass}`;
-    msgEl.classList.remove('d-none');
-    setTimeout(() => msgEl.classList.add('d-none'), 5000);
-}
-
-// --- LÓGICA DE NAVEGACIÓN (Hash Routing) ---
-
-function showPage(hash) {
-    document.querySelectorAll('.page-content').forEach(section => {
-        section.classList.add('d-none');
-    });
-
-    let hashValue = hash.substring(1).split('?')[0] || 'home'; 
-    let pageId = hashValue + '-page';
-    let pageElement = document.getElementById(pageId);
-
-    if (hash.startsWith('#detalle')) {
-        pageElement = document.getElementById('detalle-page');
-        const urlParams = new URLSearchParams(hash.substring(hash.indexOf('?')));
-        const productId = urlParams.get('id');
-        if (productId) renderProductDetail(productId);
-    }
-    
-    // Redirección forzada si intenta acceder a perfil sin estar logueado
-    if (pageId === 'perfil-page' && !isLoggedIn) {
-        showSystemMessage('Debes iniciar sesión para acceder a tu perfil.', true);
-        pageElement = document.getElementById('auth-page'); 
-        window.location.hash = '#auth';
-        return;
-    }
-    
-    if (pageId === 'perfil-page' && isLoggedIn) {
-        const userEmail = localStorage.getItem('userEmail') || 'N/A';
-        const userName = localStorage.getItem('userName') || 'N/A';
-        document.getElementById('profile-user-email').textContent = userEmail;
-        document.getElementById('profile-user-id').textContent = `ID-${userName.toUpperCase().replace(/[^A-Z0-9]/g, '-')}-SHELF`;
-    }
-
-    if (pageElement) {
-        pageElement.classList.remove('d-none');
-        window.scrollTo(0, 0); 
-
-        if (pageId === 'catalogo-page') {
-            applyFilters();
+    if(loggedInDiv) {
+        if(isLog) {
+            loggedInDiv.classList.remove('d-none');
+            if(loggedOutDiv) loggedOutDiv.classList.add('d-none');
+            const greeting = document.getElementById('user-greeting');
+            if(greeting) greeting.textContent = `Hola, ${name}`;
+            if(navPerfil) navPerfil.classList.remove('d-none');
+        } else {
+            loggedInDiv.classList.add('d-none');
+            if(loggedOutDiv) loggedOutDiv.classList.remove('d-none');
+            if(navPerfil) navPerfil.classList.add('d-none');
         }
-        if (pageId === 'home-page') {
-            renderFeaturedProducts();
-        }
-    } else {
-        document.getElementById('home-page').classList.remove('d-none');
-        renderFeaturedProducts();
-        window.location.hash = '#home';
     }
 }
 
-function handleHashChange() {
-    showPage(window.location.hash);
-}
-
-// --- LÓGICA DE PRODUCTOS, RENDERING Y RAWG ---
+//  FUNCIONES DE PRODUCTOS Y CATALOGO
 
 async function fetchRAWGProducts() {
-  const URL = `https://api.rawg.io/api/games?key=${RAWG_API_KEY}&page_size=10&ordering=-released`;
+    if (PRODUCTOS.length > 10) return; 
 
-  try {
-    const response = await fetch(URL);
-    if (!response.ok) throw new Error('Error al obtener los datos de RAWG');
-    const data = await response.json();
-    
-    const nuevosVideojuegos = data.results.map((game, index) => ({
-      id: `RAWG-${game.id}`,
-      name: game.name,
-      category: "videojuegos",
-      price: 49.99 + (index * 0.5), // Precio simulado
-      desc: `Videojuego épico lanzado el ${game.released}. ¡Explora mundos increíbles! Géneros: ${game.genres.map(g => g.name).join(', ')}.`,
-      image: game.background_image ? game.background_image : PLACEHOLDER_IMAGE,
-      released: game.released
-    }));
-
-    PRODUCTOS.push(...nuevosVideojuegos); 
-    
-    // Si estamos en el home o catálogo, actualizamos
-    if (window.location.hash.includes('#home')) renderFeaturedProducts();
-    if (window.location.hash.includes('#catalogo')) applyFilters();
-
-  } catch (error) {
-    console.error("Error al cargar videojuegos de RAWG:", error);
-  }
+    const URL = `https://api.rawg.io/api/games?key=${RAWG_API_KEY}&page_size=8&ordering=-released`;
+    try {
+        const res = await fetch(URL);
+        const data = await res.json();
+        const nuevos = data.results.map(game => ({
+            id: `RAWG-${game.id}`,
+            name: game.name,
+            category: "videojuegos",
+            price: 59.99, // Precio simulado
+            desc: `Lanzamiento: ${game.released}. Rating: ${game.rating}/5`,
+            image: game.background_image || PLACEHOLDER_IMAGE
+        }));
+        PRODUCTOS.push(...nuevos);
+    } catch (e) { console.error("Error API", e); }
 }
 
-function createProductCard(product) {
-  const detailLink = `#detalle?id=${product.id}`;
-        
-  return `
-    <div class="col">
-      <div class="card h-100 shadow-sm border-0">
-        <a href="${detailLink}">
-          <img src="${product.image}" class="card-img-top" alt="${product.name}" style="height: 180px; object-fit: cover;">
-        </a>
-        <div class="card-body d-flex flex-column">
-          <span class="small text-primary text-uppercase fw-semibold">${product.category}</span>
-          <h5 class="card-title fw-bold text-dark text-truncate mt-1">
-            <a href="${detailLink}" class="text-decoration-none text-dark">${product.name}</a>
-          </h5>
-          <p class="fs-4 fw-extrabold text-success mt-2">$${product.price.toFixed(2)}</p>
-          <button onclick="simulateAddToCart(event, '${product.id}')" class="btn btn-primary btn-sm mt-auto fw-medium">
-            Ver/Comprar
-          </button>
+function createProductCard(p) {
+    // Genera tarjeta que enlaza a catalogo.html con ID
+    return `
+      <div class="col">
+        <div class="card h-100 shadow-sm border-0">
+          <img src="${p.image}" class="card-img-top" style="height: 180px; object-fit: cover;">
+          <div class="card-body d-flex flex-column">
+            <span class="small text-primary text-uppercase fw-semibold">${p.category}</span>
+            <h5 class="card-title fw-bold text-dark text-truncate mt-1">${p.name}</h5>
+            <p class="fs-4 fw-extrabold text-success mt-2">$${p.price.toFixed(2)}</p>
+            <a href="catalogo.html?id=${p.id}" class="btn btn-primary btn-sm mt-auto fw-medium">Ver Detalles</a>
+          </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
 }
 
 function renderFeaturedProducts() {
-  const container = document.getElementById('featured-products-container');
-  // Asegura que se renderizan los primeros 4 productos
-  if (container) {
-      container.innerHTML = PRODUCTOS.slice(0, 4).map(createProductCard).join('');
-  }
+    const container = document.getElementById('featured-products-container');
+    if (container) {
+        container.innerHTML = PRODUCTOS.slice(0, 4).map(createProductCard).join('');
+    }
 }
 
 function applyFilters() {
-  const categoryFilterElement = document.getElementById('filter-category');
-    const sortFilterElement = document.getElementById('filter-sort');
-    const productsContainer = document.getElementById('products-container');
+    const catSelect = document.getElementById('filter-category');
+    const sortSelect = document.getElementById('filter-sort');
+    const container = document.getElementById('products-container');
+    
+    if(!catSelect || !container) return;
 
-    if (!categoryFilterElement || !sortFilterElement || !productsContainer) return;
+    const cat = catSelect.value;
+    const sort = sortSelect.value;
+    
+    let filtered = PRODUCTOS.filter(p => cat === 'todos' ? true : p.category === cat);
+    
+    if (sort === 'asc') filtered.sort((a, b) => a.price - b.price);
+    if (sort === 'desc') filtered.sort((a, b) => b.price - a.price);
 
-    const categoryFilter = categoryFilterElement.value;
-    const sortFilter = sortFilterElement.value;
-    let filteredProducts = [...PRODUCTOS];
-
-    if (categoryFilter !== 'todos') {
-        filteredProducts = filteredProducts.filter(p => p.category === categoryFilter);
-    }
-
-    if (sortFilter === 'asc') {
-        filteredProducts.sort((a, b) => a.price - b.price);
-    } else if (sortFilter === 'desc') {
-        filteredProducts.sort((a, b) => b.price - a.price);
-    }
-
-    productsContainer.innerHTML = filteredProducts.map(createProductCard).join('') || 
-                        '<p class="col-12 text-center text-muted p-4">No se encontraron productos para esta selección.</p>';
+    container.innerHTML = filtered.map(createProductCard).join('') || '<p class="text-center p-4 w-100">No hay productos con este filtro.</p>';
 }
 
-function renderProductDetail(productId) {
-    const product = PRODUCTOS.find(p => String(p.id) === String(productId));
-
-    if (!product) {
-        showSystemMessage('Producto no encontrado.', true);
-        window.location.hash = '#catalogo';
+function renderProductDetail(id) {
+    const p = PRODUCTOS.find(prod => String(prod.id) === String(id));
+    
+    if (!p) {
+        window.location.href = 'catalogo.html'; 
         return;
     }
 
-    // 1. Actualizar Contenido
-    document.getElementById('detalle-image').src = product.image || PLACEHOLDER_IMAGE;
-    document.getElementById('detalle-image').alt = product.name;
-    document.getElementById('detalle-category').textContent = product.category.toUpperCase();
-    document.getElementById('detalle-title').textContent = product.name;
-    document.getElementById('detalle-price').textContent = `$${product.price.toFixed(2)}`;
-    document.getElementById('detalle-description').textContent = product.desc;
-    
-    // Info Adicional/RAWG
-    if (String(product.id).startsWith('RAWG')) {
-        const released = product.released || 'N/A';
-        document.getElementById('detalle-api-info').innerHTML = `Juego obtenido de la API externa de RAWG. **Fecha de lanzamiento:** ${released}`;
-    } else {
-        document.getElementById('detalle-api-info').textContent = "Producto de nuestro inventario principal. Calidad garantizada.";
-    }
+    const catalogoView = document.getElementById('catalogo-view');
+    const detalleView = document.getElementById('detalle-view');
+    if(catalogoView) catalogoView.classList.add('d-none');
+    if(detalleView) detalleView.classList.remove('d-none');
 
-    // 2. Enlazar la función de compra al botón de la página de detalle
-    document.getElementById('add-to-cart').onclick = () => simulateAddToCart(null, productId);
+    document.getElementById('detalle-image').src = p.image;
+    document.getElementById('detalle-title').textContent = p.name;
+    document.getElementById('detalle-category').textContent = p.category;
+    document.getElementById('detalle-price').textContent = `$${p.price.toFixed(2)}`;
+    document.getElementById('detalle-description').textContent = p.desc;
     
-    // 3. Reiniciar y añadir listeners de rating
-    const ratingStars = document.querySelectorAll('#rating-stars .rating-star');
-    ratingStars.forEach(star => {
-        star.classList.remove('active', 'text-warning');
-        star.classList.add('text-muted');
-        // Usar removeEventListener y addEventListener para evitar duplicados
-        const newListener = () => handleRating(parseInt(star.dataset.rating), ratingStars);
-        star.removeEventListener('click', star.listener || (() => {})); 
-        star.addEventListener('click', newListener);
-        star.listener = newListener; // Guardar la referencia del listener
+    const apiInfoDiv = document.getElementById('detalle-api-info');
+    if(String(p.id).startsWith('RAWG')) {
+        apiInfoDiv.innerHTML = '<strong>Fuente:</strong> API Externa (RAWG). Precio estimado.';
+    } else {
+        apiInfoDiv.textContent = 'Producto original de The Happy Shelf. Envío inmediato.';
+    }
+    
+    const btnCart = document.getElementById('add-to-cart');
+    const newBtn = btnCart.cloneNode(true);
+    btnCart.parentNode.replaceChild(newBtn, btnCart);
+    
+    newBtn.addEventListener('click', () => {
+        const feedback = document.getElementById('cart-feedback');
+        feedback.textContent = `¡"${p.name}" añadido al carrito!`;
+        feedback.classList.remove('d-none');
+        setTimeout(() => feedback.classList.add('d-none'), 3000);
     });
-    document.getElementById('rating-message').textContent = 'Haz clic en una estrella para votar.';
 }
 
-function handleRating(rating, stars) {
-  stars.forEach((star, index) => {
-    const starValue = parseInt(star.dataset.rating);
-    const isActive = starValue <= rating;
-    star.classList.toggle('active', isActive);
-    star.classList.toggle('text-warning', isActive);
-    star.classList.toggle('text-muted', !isActive);
-  });
-  document.getElementById('rating-message').textContent = `¡Gracias! Calificaste con ${rating} estrellas.`;
+function closeDetailView() {
+    // 1. Limpiar la URL sin recargar la página
+    const url = new URL(window.location);
+    url.searchParams.delete('id');
+    window.history.pushState({}, '', url);
+    document.getElementById('detalle-view').classList.add('d-none');
+    document.getElementById('catalogo-view').classList.remove('d-none');
+    applyFilters(); 
 }
-
-
-// --- MANEJADORES GLOBALES DE EVENTOS Y FUNCIONES EXPORTADAS ---
-
-function simulateAddToCart(event, productId) {
-    if (event) event.preventDefault(); 
-    const feedbackEl = document.getElementById('cart-feedback');
-    if (feedbackEl) {
-        // Mostrar feedback en la página de detalle
-        feedbackEl.classList.remove('d-none');
-        setTimeout(() => feedbackEl.classList.add('d-none'), 3000);
-    }
-    const product = PRODUCTOS.find(p => String(p.id) === String(productId));
-    if (product) {
-        showSystemMessage(`"${product.name}" añadido a la cesta (simulación).`, false);
-    } else {
-        showSystemMessage(`Producto no encontrado para añadir al carrito.`, true);
-    }
-}
-
-function handleCategoryClick(category) {
-    // 1. Cambia el hash para forzar la navegación
-    window.location.hash = '#catalogo';
-    
-    // 2. Espera un momento para que la función showPage cargue el catálogo
-    setTimeout(() => {
-        const filterSelect = document.getElementById('filter-category');
-        if (filterSelect) {
-             // 3. Setea el filtro y aplica los filtros
-             if ([...filterSelect.options].map(o => o.value).includes(category)) {
-                 filterSelect.value = category;
-             } else {
-                 filterSelect.value = 'todos'; 
-             }
-             applyFilters();
-        }
-    }, 100);
-}
-
-
-// --- INICIALIZACIÓN PRINCIPAL ---
-
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Inicializar UI de autenticación
-    updateAuthUI();
-
-    // 2. Cargar productos externos (Videojuegos RAWG)
-    fetchRAWGProducts();
-
-    // 3. Establecer la página inicial
-    handleHashChange();
-
-    // 4. Listeners para navegación (cambio de hash)
-    window.addEventListener('hashchange', handleHashChange);
-
-    // 5. Eventos de Autenticación funcional
-    document.getElementById('login-form').addEventListener('submit', handleLogin);
-    document.getElementById('register-form').addEventListener('submit', handleRegister);
-    document.getElementById('show-register-btn').addEventListener('click', showRegisterForm);
-    document.getElementById('show-login-btn').addEventListener('click', showLoginForm);
-
-    // 6. Evento de Calculadora de Ahorro
-    document.getElementById('savings-calculator-form').addEventListener('submit', calculateSavings);
-
-    // 7. Exportar funciones globales necesarias (para el HTML)
-    window.applyFilters = applyFilters;
-    window.simulateAddToCart = simulateAddToCart;
-    window.handleLogout = handleLogout;
-    window.handleCategoryClick = handleCategoryClick;
-});
