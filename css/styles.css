@@ -1,6 +1,11 @@
 /* CÓDIGO CSS SOLAMENTE: styles.css */
 
-/* Estilo para ajustar el texto del caption del carrusel */
+/* Estilo general del cuerpo de la página */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Estilos para el Carrusel/Overlay (Preexistentes) */
 .slide-overlay-html {
     /* Ajustes para el fondo del texto si es necesario, aunque Bootstrap ya usa un degradado */
     background: rgba(0, 0, 0, 0.5); 
@@ -10,7 +15,7 @@
     text-align: center;
 }
 
-/* Estilo para las estrellas de rating */
+/* Estilos para las Tarjetas de Productos (Preexistentes) */
 .rating-star {
     cursor: pointer;
     transition: color 0.2s;
@@ -18,7 +23,6 @@
 .rating-star:hover, .rating-star.active {
     color: #ffc107; /* Color amarillo de Bootstrap */
 }
-
 .product-image {
     width: 100%; /* Ocupa todo el ancho de la tarjeta */
     height: 180px; /* Altura fija para todas las imágenes */
@@ -27,14 +31,20 @@
     border-top-right-radius: var(--bs-card-border-radius);
 }
 
-body {
-     font-family: 'Inter', sans-serif;
-}
 
-.slide-overlay-html {
-    background: rgba(0, 0, 0, 0.5); 
-    padding: 1.5rem;
-    border-radius: 0.5rem;
-    bottom: 20px;
-    text-align: center;
+/* === NUEVOS ESTILOS PARA ABOUT.HTML === */
+
+/* Estilos para la sección HERO (Titular) en Acerca de Nosotros */
+.hero-about {
+    /* Reemplazar 'images/fondo-about-placeholder.jpg' con tu imagen de fondo real */
+    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('../images/fondo-about-placeholder.jpg'); 
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 80px 0;
+}
+/* Estilo para las imágenes dentro de la sección de la historia */
+.story-section img {
+    max-height: 400px;
+    object-fit: cover;
 }

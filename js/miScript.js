@@ -15,10 +15,10 @@ const PRODUCTOS = [
     { id: 11, name: "Buldak carbonara", category: "snacks", price: 50.50, desc: "Ramen delicioso y picante sabor carbonara.", image: "./images/carbonara.jpg" },
     { id: 12, name: "Xenomorph doll", category: "coleccionables", price: 700.00, desc: "Monster high skullector alien.", image: "./images/alienmh.png" },
     { id: 13, name: "Consola SNES Classic Edition", category: "consolas", price: 1200.00, desc: "Mini-consola con 21 juegos clásicos preinstalados.", image: "./images/snes.png" },
-    { id: 14, name: "Lana Merino Extra Suave (Rojo)", category: "crochet", price: 150.00, desc: "Madeja de lana merino de 100g, ideal para proyectos delicados.", image: "./images/lana.png" },
-    { id: 15, name: "El Señor de los Anillos: La Comunidad del Anillo", category: "libros", price: 499.00, desc: "Primera parte de la épica saga de J.R.R. Tolkien.", image: "./images/lotr.png" },
-    { id: 16, name: "Peluche Coleccionable de Pikachu", category: "coleccionables", price: 650.00, desc: "Peluche grande y suave de la mascota icónica de Pokémon.", image: "./images/pikachu.png" },
-    { id: 17, name: "Barrita de Matcha y Arroz Inflado", category: "snacks", price: 35.00, desc: "Snack energético japonés con té matcha.", image: "./images/matcha_bar.png"}
+    { id: 14, name: "Lana Merino Extra Suave (Rojo)", category: "crochet", price: 150.00, desc: "Madeja de lana merino de 100g, ideal para proyectos delicados.", image: "./images/lana.png" },
+    { id: 15, name: "El Señor de los Anillos: La Comunidad del Anillo", category: "libros", price: 499.00, desc: "Primera parte de la épica saga de J.R.R. Tolkien.", image: "./images/lotr.png" },
+    { id: 16, name: "Peluche Coleccionable de Pikachu", category: "coleccionables", price: 650.00, desc: "Peluche grande y suave de la mascota icónica de Pokémon.", image: "./images/pikachu.png" },
+    { id: 17, name: "Barrita de Matcha y Arroz Inflado", category: "snacks", price: 35.00, desc: "Snack energético japonés con té matcha.", image: "./images/matcha_bar.png"}
 ];
 
 // Variables de estado (sin variables manuales para el carrusel)
