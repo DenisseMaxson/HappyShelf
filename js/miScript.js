@@ -1,5 +1,8 @@
-// --- CONSTANTES Y DATOS MOCK ---
+/* =========================================
+   ARCHIVO: js/miScript.js
+   ========================================= */
 
+// --- CONSTANTES Y DATOS MOCK ---
 const PRODUCTOS = [
   { id: 1, name: "Consola PS4 Death Stranding", category: "consolas", price: 4200.00, desc: "Consola playstation 4 edicion especial death stranding", image: "./images/dsps4.png" },
   { id: 2, name: "Si el amor es una isla", category: "libros", price: 350.50, desc: "Edición de tapa dura con ilustraciones.", image: "./images/amorisla.jpg" },
@@ -23,8 +26,9 @@ const PRODUCTOS = [
 const RAWG_API_KEY = "440d1bf1d0fc4b8ab796d650dce689bb"; 
 const PLACEHOLDER_IMAGE = "https://placehold.co/300x180?text=No+Image";
 
-// Cargar usuarios de localStorage o iniciar vacío
+// CARGAR DATOS DE LOCALSTORAGE
 let USUARIOS_REGISTRADOS = JSON.parse(localStorage.getItem('registeredUsers')) || [];
+let CARRITO = JSON.parse(localStorage.getItem('myCart')) || []; // <--- NUEVO: Cargar carrito
 
 
 // --- INICIALIZACIÓN Y DETECCIÓN DE PÁGINA ---
@@ -33,32 +37,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const path = window.location.pathname;
 
-    // --- LÓGICA PARA INDEX.HTML (INICIO) ---
+    // --- INDEX.HTML ---
     if (path.includes('index.html') || path.endsWith('/')) {
-        // Cargar productos externos solo para tener variedad
         fetchRAWGProducts().then(() => renderFeaturedProducts());
     }
 
-    // --- LÓGICA PARA CATALOGO.HTML ---
+    // --- CATALOGO.HTML ---
     if (path.includes('catalogo.html')) {
         fetchRAWGProducts().then(() => {
-            // Revisar parámetros URL (ej: catalogo.html?id=1)
             const urlParams = new URLSearchParams(window.location.search);
             const productId = urlParams.get('id');
             const catFilter = urlParams.get('cat');
 
             if (productId) {
-                // Si hay ID en la URL, mostrar vista detalle
                 renderProductDetail(productId);
             } else {
-                // Si no, mostrar vista grilla normal
                 const catalogoView = document.getElementById('catalogo-view');
                 const detalleView = document.getElementById('detalle-view');
-                
                 if(catalogoView) catalogoView.classList.remove('d-none');
                 if(detalleView) detalleView.classList.add('d-none');
                 
-                // Si viene del carrusel con filtro
                 if(catFilter) {
                     const select = document.getElementById('filter-category');
                     if(select) { select.value = catFilter; }
@@ -68,24 +66,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- LÓGICA PARA LOGIN.HTML ---
+    // --- CARRITO.HTML (NUEVO) ---
+    if (path.includes('carrito.html')) {
+        renderCartPage();
+    }
+
+    // --- LOGIN.HTML ---
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
-        // Escuchar envío del Login
         loginForm.addEventListener('submit', handleLogin);
-        
-        // Escuchar envío del Registro
         const registerForm = document.getElementById('register-form');
         if(registerForm) registerForm.addEventListener('submit', handleRegister);
         
-        // Alternar entre Login y Registro
         document.getElementById('show-register-btn').addEventListener('click', (e) => {
             e.preventDefault();
             document.getElementById('login-form-container').classList.add('d-none');
             document.getElementById('register-form-container').classList.remove('d-none');
-            clearSystemMessage(); // Limpiar mensajes viejos
+            clearSystemMessage();
         });
-        
         document.getElementById('show-login-btn').addEventListener('click', (e) => {
             e.preventDefault();
             document.getElementById('register-form-container').classList.add('d-none');
@@ -94,106 +92,195 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- LÓGICA PARA PERFIL.HTML ---
+    // --- PERFIL.HTML ---
     if (path.includes('perfil.html')) {
-        // Redirección de seguridad si no está logueado
         if (localStorage.getItem('isLoggedIn') !== 'true') {
             window.location.href = 'login.html';
         }
     }
 });
 
-//  FUNCIONES DE AUTENTICACIÓN 
+
+// =========================================
+//  LÓGICA DEL CARRITO (AGREGADA)
+// =========================================
+
+function addToCart(id) {
+    // 1. Encontrar producto
+    const prod = PRODUCTOS.find(p => String(p.id) === String(id));
+    if (!prod) return;
+
+    // 2. Verificar si ya existe en carrito
+    const itemEnCarrito = CARRITO.find(item => String(item.id) === String(id));
+    if (itemEnCarrito) {
+        itemEnCarrito.qty++;
+    } else {
+        CARRITO.push({ ...prod, qty: 1 });
+    }
+
+    // 3. Guardar en memoria
+    localStorage.setItem('myCart', JSON.stringify(CARRITO));
+
+    // 4. Feedback (Mensaje) en la vista de detalle
+    const feedback = document.getElementById('cart-feedback');
+    if(feedback) {
+        feedback.textContent = `¡"${prod.name}" añadido al carrito!`;
+        feedback.classList.remove('d-none');
+        setTimeout(() => feedback.classList.add('d-none'), 2000);
+    }
+}
+
+function renderCartPage() {
+    const emptyView = document.getElementById('cart-empty-view');
+    const itemsView = document.getElementById('cart-items-view');
+    const tbody = document.getElementById('cart-table-body');
+    
+    if (CARRITO.length === 0) {
+        emptyView.classList.remove('d-none');
+        itemsView.classList.add('d-none');
+        return;
+    }
+
+    emptyView.classList.add('d-none');
+    itemsView.classList.remove('d-none');
+    tbody.innerHTML = '';
+    
+    let totalGlobal = 0;
+
+    CARRITO.forEach(item => {
+        const subtotal = item.price * item.qty;
+        totalGlobal += subtotal;
+
+        tbody.innerHTML += `
+            <tr>
+                <td class="ps-4">
+                    <div class="d-flex align-items-center">
+                        <img src="${item.image}" alt="img" class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                        <div>
+                            <p class="mb-0 fw-bold text-dark text-truncate" style="max-width: 200px;">${item.name}</p>
+                            <small class="text-muted">${item.category}</small>
+                        </div>
+                    </div>
+                </td>
+                <td>$${item.price.toFixed(2)}</td>
+                <td>
+                    <div class="input-group input-group-sm" style="width: 100px;">
+                        <button class="btn btn-outline-secondary" onclick="changeQty('${item.id}', -1)">-</button>
+                        <input type="text" class="form-control text-center bg-white" value="${item.qty}" readonly>
+                        <button class="btn btn-outline-secondary" onclick="changeQty('${item.id}', 1)">+</button>
+                    </div>
+                </td>
+                <td class="fw-bold">$${subtotal.toFixed(2)}</td>
+                <td class="pe-4 text-end">
+                    <button class="btn btn-link text-danger p-0" onclick="removeFromCart('${item.id}')">
+                        <i class="bi bi-trash-fill fs-5"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    document.getElementById('cart-subtotal').textContent = `$${totalGlobal.toFixed(2)}`;
+    document.getElementById('cart-total').textContent = `$${totalGlobal.toFixed(2)}`;
+}
+
+function changeQty(id, delta) {
+    const item = CARRITO.find(i => String(i.id) === String(id));
+    if (item) {
+        item.qty += delta;
+        if (item.qty <= 0) {
+            removeFromCart(id);
+            return;
+        }
+        localStorage.setItem('myCart', JSON.stringify(CARRITO));
+        renderCartPage(); 
+    }
+}
+
+function removeFromCart(id) {
+    CARRITO = CARRITO.filter(i => String(i.id) !== String(id));
+    localStorage.setItem('myCart', JSON.stringify(CARRITO));
+    renderCartPage();
+}
+
+function checkout() {
+    if (localStorage.getItem('isLoggedIn') !== 'true') {
+        showAuthMessage('Debes iniciar sesión para finalizar.', 'warning');
+        setTimeout(() => window.location.href = 'login.html', 2000);
+        return;
+    }
+    showAuthMessage('¡Compra realizada con éxito!', 'success');
+    CARRITO = [];
+    localStorage.removeItem('myCart');
+    setTimeout(() => window.location.href = 'index.html', 2000);
+}
+
+
+// =========================================
+//  FUNCIONES DE AUTH
+// =========================================
 
 function showAuthMessage(mensaje, tipo) {
     const msgDiv = document.getElementById('system-message');
     if (msgDiv) {
         msgDiv.textContent = mensaje;
-        // Tipos: 'success' (verde), 'danger' (rojo), 'warning' (amarillo)
-        msgDiv.className = `alert alert-${tipo} mb-3 shadow-sm`; 
+        msgDiv.className = `alert alert-${tipo} mb-3 shadow-sm fixed-top end-0 mt-5 me-4 p-3`; 
         msgDiv.classList.remove('d-none');
     }
 }
 
-// Helper para limpiar mensaje
 function clearSystemMessage() {
     const msgDiv = document.getElementById('system-message');
     if (msgDiv) msgDiv.classList.add('d-none');
 }
 
-// 1. Manejar LOGIN
 function handleLogin(e) {
     e.preventDefault();
     const email = document.getElementById('login-username').value;
     const pass = document.getElementById('login-password').value;
-    
-    // Buscar usuario
     const user = USUARIOS_REGISTRADOS.find(u => u.email === email && u.password === pass);
 
     if (user) {
-        // Guardar sesión
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userName', user.name);
         localStorage.setItem('userEmail', user.email);
-        
-        // Mensaje Verde
         showAuthMessage(`¡Hola de nuevo, ${user.name}! Redirigiendo...`, 'success');
-        
-        // Esperar 1.5s y redirigir al Home
-        setTimeout(() => {
-            window.location.href = 'index.html'; 
-        }, 1500);
-
+        setTimeout(() => { window.location.href = 'index.html'; }, 1500);
     } else {
-        // Mensaje Rojo
         showAuthMessage('Correo o contraseña incorrectos.', 'danger');
     }
 }
 
-// 2. Manejar REGISTRO
 function handleRegister(e) {
     e.preventDefault();
     const email = document.getElementById('register-username').value;
     const pass = document.getElementById('register-password').value;
-    
-    // Validar si ya existe
-    const existe = USUARIOS_REGISTRADOS.find(u => u.email === email);
-    
-    if (existe) {
-        showAuthMessage('Este correo ya está registrado. Intenta iniciar sesión.', 'warning');
+    if (USUARIOS_REGISTRADOS.find(u => u.email === email)) {
+        showAuthMessage('Este correo ya está registrado.', 'warning');
         return;
     }
-
-    // Crear y guardar
     const nombre = email.split('@')[0];
     USUARIOS_REGISTRADOS.push({ email, password: pass, name: nombre });
     localStorage.setItem('registeredUsers', JSON.stringify(USUARIOS_REGISTRADOS));
-    
-    // Mensaje Verde
     showAuthMessage('¡Cuenta creada con éxito! Ahora inicia sesión.', 'success');
-    
-    // Resetear form y volver al login automáticamente tras 2 segundos
     document.getElementById('register-form').reset();
     setTimeout(() => {
         document.getElementById('register-form-container').classList.add('d-none');
         document.getElementById('login-form-container').classList.remove('d-none');
-        clearSystemMessage(); // Limpiar el mensaje de éxito para que el login se vea limpio
+        clearSystemMessage();
     }, 2000);
 }
 
-// 3. Manejar LOGOUT
 function handleLogout() {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
-    window.location.href = 'index.html'; // Volver al inicio
+    window.location.href = 'index.html';
 }
 
-// 4. Actualizar Interfaz según estado
 function updateAuthUI() {
     const isLog = localStorage.getItem('isLoggedIn') === 'true';
     const name = localStorage.getItem('userName') || 'Invitado';
-    
     const loggedInDiv = document.getElementById('auth-links-logged-in');
     const loggedOutDiv = document.getElementById('auth-links-logged-out');
     const navPerfil = document.getElementById('nav-perfil');
@@ -213,11 +300,13 @@ function updateAuthUI() {
     }
 }
 
-//  FUNCIONES DE PRODUCTOS Y CATALOGO
+
+// =========================================
+//  FUNCIONES DE PRODUCTOS (CARD ORIGINAL)
+// =========================================
 
 async function fetchRAWGProducts() {
-    if (PRODUCTOS.length > 10) return; 
-
+    if (PRODUCTOS.length > 20) return;
     const URL = `https://api.rawg.io/api/games?key=${RAWG_API_KEY}&page_size=8&ordering=-released`;
     try {
         const res = await fetch(URL);
@@ -226,8 +315,8 @@ async function fetchRAWGProducts() {
             id: `RAWG-${game.id}`,
             name: game.name,
             category: "videojuegos",
-            price: 59.99, // Precio simulado
-            desc: `Lanzamiento: ${game.released}. Rating: ${game.rating}/5`,
+            price: 59.99,
+            desc: `Lanzamiento: ${game.released}`,
             image: game.background_image || PLACEHOLDER_IMAGE
         }));
         PRODUCTOS.push(...nuevos);
@@ -235,7 +324,8 @@ async function fetchRAWGProducts() {
 }
 
 function createProductCard(p) {
-    // Genera tarjeta que enlaza a catalogo.html con ID
+    // --- ESTA ES LA CARD ORIGINAL DE TU CÓDIGO ---
+    // Solo tiene el botón de "Ver Detalles"
     return `
       <div class="col">
         <div class="card h-100 shadow-sm border-0">
@@ -253,9 +343,7 @@ function createProductCard(p) {
 
 function renderFeaturedProducts() {
     const container = document.getElementById('featured-products-container');
-    if (container) {
-        container.innerHTML = PRODUCTOS.slice(0, 4).map(createProductCard).join('');
-    }
+    if (container) container.innerHTML = PRODUCTOS.slice(0, 4).map(createProductCard).join('');
 }
 
 function applyFilters() {
@@ -264,25 +352,19 @@ function applyFilters() {
     const container = document.getElementById('products-container');
     
     if(!catSelect || !container) return;
-
     const cat = catSelect.value;
     const sort = sortSelect.value;
     
     let filtered = PRODUCTOS.filter(p => cat === 'todos' ? true : p.category === cat);
-    
     if (sort === 'asc') filtered.sort((a, b) => a.price - b.price);
     if (sort === 'desc') filtered.sort((a, b) => b.price - a.price);
 
-    container.innerHTML = filtered.map(createProductCard).join('') || '<p class="text-center p-4 w-100">No hay productos con este filtro.</p>';
+    container.innerHTML = filtered.map(createProductCard).join('') || '<p class="text-center w-100 p-4">Sin resultados.</p>';
 }
 
 function renderProductDetail(id) {
     const p = PRODUCTOS.find(prod => String(prod.id) === String(id));
-    
-    if (!p) {
-        window.location.href = 'catalogo.html'; 
-        return;
-    }
+    if (!p) { window.location.href = 'catalogo.html'; return; }
 
     const catalogoView = document.getElementById('catalogo-view');
     const detalleView = document.getElementById('detalle-view');
@@ -296,26 +378,22 @@ function renderProductDetail(id) {
     document.getElementById('detalle-description').textContent = p.desc;
     
     const apiInfoDiv = document.getElementById('detalle-api-info');
-    if(String(p.id).startsWith('RAWG')) {
-        apiInfoDiv.innerHTML = '<strong>Fuente:</strong> API Externa (RAWG). Precio estimado.';
-    } else {
-        apiInfoDiv.textContent = 'Producto original de The Happy Shelf. Envío inmediato.';
+    if(apiInfoDiv) {
+        if(String(p.id).startsWith('RAWG')) {
+            apiInfoDiv.innerHTML = '<strong>Fuente:</strong> API Externa (RAWG). Precio estimado.';
+        } else {
+            apiInfoDiv.textContent = 'Producto original de The Happy Shelf. Envío inmediato.';
+        }
     }
     
+    // --- AQUÍ CONECTAMOS EL BOTÓN EXISTENTE "Añadir a la Cesta" CON LA FUNCIÓN REAL ---
     const btnCart = document.getElementById('add-to-cart');
-    const newBtn = btnCart.cloneNode(true);
+    const newBtn = btnCart.cloneNode(true); 
     btnCart.parentNode.replaceChild(newBtn, btnCart);
-    
-    newBtn.addEventListener('click', () => {
-        const feedback = document.getElementById('cart-feedback');
-        feedback.textContent = `¡"${p.name}" añadido al carrito!`;
-        feedback.classList.remove('d-none');
-        setTimeout(() => feedback.classList.add('d-none'), 3000);
-    });
+    newBtn.addEventListener('click', () => addToCart(p.id));
 }
 
 function closeDetailView() {
-    // 1. Limpiar la URL sin recargar la página
     const url = new URL(window.location);
     url.searchParams.delete('id');
     window.history.pushState({}, '', url);
