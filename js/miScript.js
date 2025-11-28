@@ -418,3 +418,16 @@ function closeDetailView() {
     document.getElementById('catalogo-view').classList.remove('d-none');
     applyFilters(); 
 }
+
+// confirmacion de logout
+
+document.addEventListener("DOMContentLoaded", () => {
+    const btnConfirmLogout = document.getElementById("confirm-logout");
+
+    if (btnConfirmLogout) {
+        btnConfirmLogout.addEventListener("click", () => {
+            // Ejecuta tu función original
+            handleLogout();
+        });
+    }
+});

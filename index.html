@@ -39,8 +39,11 @@
                     </div>
                     <div id="auth-links-logged-in" class="d-flex align-items-center d-none">
                         <span id="user-greeting" class="text-sm me-2 text-secondary">Hola, Invitado</span>
-                        <button onclick="handleLogout()" class="btn btn-danger btn-sm rounded-pill fw-medium">Salir</button>
-                    </div>
+                      <button class="btn btn-danger btn-sm rounded-pill fw-medium" data-bs-toggle="modal" data-bs-target="#logoutModal">
+                            Salir
+                        </button>
+
+                     </div>
                 </div>
             </div>
         </div>
@@ -113,7 +116,39 @@
 
     <div id="system-message" class="fixed-top end-0 mt-5 me-4 p-3 rounded shadow d-none" style="z-index: 20;"></div>
 
+    <!-- Modal Confirmar Cerrar Sesión -->
+        <div class="modal fade" id="logoutModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="logoutLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+            
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="logoutLabel">¿Cerrar Sesión?</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            
+            <div class="modal-body">
+                ¿Estás seguro de que deseas cerrar tu sesión? 
+                Perderás el progreso guardado.
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                Cancelar
+                </button>
+                <button type="button" id="confirm-logout" class="btn btn-danger">
+                Sí, cerrar sesión
+                </button>
+            </div>
+            
+            </div>
+        </div>
+        </div>
+
+
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/miScript.js"></script>
+
+
 </body>
 </html>
