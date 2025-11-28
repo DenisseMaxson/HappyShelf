@@ -1,6 +1,4 @@
-/* =========================================
-   ARCHIVO: js/miScript.js
-   ========================================= */
+
 
 // --- CONSTANTES Y DATOS MOCK ---
 const PRODUCTOS = [
@@ -66,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- CARRITO.HTML (NUEVO) ---
+    // --- CARRITO.HTML ---
     if (path.includes('carrito.html')) {
         renderCartPage();
     }
@@ -102,15 +100,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // =========================================
-//  LÓGICA DEL CARRITO (AGREGADA)
+//  LÓGICA DEL CARRITO 
 // =========================================
 
 function addToCart(id) {
-    // 1. Encontrar producto
+    // ENCONTRAR PRODUCTO
     const prod = PRODUCTOS.find(p => String(p.id) === String(id));
     if (!prod) return;
 
-    // 2. Verificar si ya existe en carrito
+    // VERIFICAR SI YA EXISTE EN CARRITO
     const itemEnCarrito = CARRITO.find(item => String(item.id) === String(id));
     if (itemEnCarrito) {
         itemEnCarrito.qty++;
@@ -118,10 +116,10 @@ function addToCart(id) {
         CARRITO.push({ ...prod, qty: 1 });
     }
 
-    // 3. Guardar en memoria
+    // GUARDAMOS EN LOCALSTORAGE
     localStorage.setItem('myCart', JSON.stringify(CARRITO));
 
-    // 4. Feedback (Mensaje) en la vista de detalle
+    // MENSAJE DE FEEDBACK
     const feedback = document.getElementById('cart-feedback');
     if(feedback) {
         feedback.textContent = `¡"${prod.name}" añadido al carrito!`;
@@ -302,30 +300,49 @@ function updateAuthUI() {
 
 
 // =========================================
-//  FUNCIONES DE PRODUCTOS (CARD ORIGINAL)
+//  FUNCIONES DE PRODUCTOS 
 // =========================================
 
 async function fetchRAWGProducts() {
     if (PRODUCTOS.length > 20) return;
+
     const URL = `https://api.rawg.io/api/games?key=${RAWG_API_KEY}&page_size=8&ordering=-released`;
+
     try {
         const res = await fetch(URL);
         const data = await res.json();
+
+        // NUESTRAS IMÁGENES PERSONALIZADAS
+        const misImagenes = {
+            "Play Drift Boss game online": "./images/driftboss.png",
+            "White Heaven":   "./images/whiteheaven.jpg",
+            "TianXia":        "./images/tianxia.jpg",
+            "The Drowning":   "./images/drowning.jpg",
+            "Stalin vs. Martians 3": "./images/stalin.jpeg",
+            "test test game": "./images/ttg.jpg"
+        };
+
+        // AQUI LAS USAMOS EN EL MAP
         const nuevos = data.results.map(game => ({
             id: `RAWG-${game.id}`,
             name: game.name,
             category: "videojuegos",
             price: 59.99,
             desc: `Lanzamiento: ${game.released}`,
-            image: game.background_image || PLACEHOLDER_IMAGE
+            image: misImagenes[game.name] || game.background_image || PLACEHOLDER_IMAGE
         }));
+
         PRODUCTOS.push(...nuevos);
-    } catch (e) { console.error("Error API", e); }
+
+    } catch (e) { 
+        console.error("Error API", e); 
+    }
 }
 
+
+
 function createProductCard(p) {
-    // --- ESTA ES LA CARD ORIGINAL DE TU CÓDIGO ---
-    // Solo tiene el botón de "Ver Detalles"
+    // --- ESTA ES LA CARD DE LOS PRODUCTOS ---
     return `
       <div class="col">
         <div class="card h-100 shadow-sm border-0">
@@ -386,7 +403,7 @@ function renderProductDetail(id) {
         }
     }
     
-    // --- AQUÍ CONECTAMOS EL BOTÓN EXISTENTE "Añadir a la Cesta" CON LA FUNCIÓN REAL ---
+    // --- AQUÍ CONECTAMOS EL BOTÓN DE "Añadir a la Cesta" CON LA FUNCIÓN ---
     const btnCart = document.getElementById('add-to-cart');
     const newBtn = btnCart.cloneNode(true); 
     btnCart.parentNode.replaceChild(newBtn, btnCart);
