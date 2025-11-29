@@ -1,4 +1,7 @@
-
+/* =========================================
+   ARCHIVO: js/miScript.js
+   CONTENIDO: Completo y Corregido
+   ========================================= */
 
 // --- CONSTANTES Y DATOS MOCK ---
 const PRODUCTOS = [
@@ -24,23 +27,23 @@ const PRODUCTOS = [
 const RAWG_API_KEY = "440d1bf1d0fc4b8ab796d650dce689bb"; 
 const PLACEHOLDER_IMAGE = "https://placehold.co/300x180?text=No+Image";
 
-// CARGAR DATOS DE LOCALSTORAGE
+// CARGAR DATOS
 let USUARIOS_REGISTRADOS = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-let CARRITO = JSON.parse(localStorage.getItem('myCart')) || []; // <--- NUEVO: Cargar carrito
+let CARRITO = JSON.parse(localStorage.getItem('myCart')) || [];
 
 
-// --- INICIALIZACIÓN Y DETECCIÓN DE PÁGINA ---
+// --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
     updateAuthUI(); 
 
     const path = window.location.pathname;
 
-    // --- INDEX.HTML ---
+    // --- INDEX ---
     if (path.includes('index.html') || path.endsWith('/')) {
         fetchRAWGProducts().then(() => renderFeaturedProducts());
     }
 
-    // --- CATALOGO.HTML ---
+    // --- CATALOGO ---
     if (path.includes('catalogo.html')) {
         fetchRAWGProducts().then(() => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -50,31 +53,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (productId) {
                 renderProductDetail(productId);
             } else {
-                const catalogoView = document.getElementById('catalogo-view');
-                const detalleView = document.getElementById('detalle-view');
-                if(catalogoView) catalogoView.classList.remove('d-none');
-                if(detalleView) detalleView.classList.add('d-none');
+                const cView = document.getElementById('catalogo-view');
+                if(cView) cView.classList.remove('d-none');
                 
                 if(catFilter) {
-                    const select = document.getElementById('filter-category');
-                    if(select) { select.value = catFilter; }
+                    const sel = document.getElementById('filter-category');
+                    if(sel) sel.value = catFilter;
                 }
                 applyFilters();
             }
         });
     }
 
-    // --- CARRITO.HTML ---
+    // --- CARRITO ---
     if (path.includes('carrito.html')) {
         renderCartPage();
     }
 
-    // --- LOGIN.HTML ---
+    // --- LOGIN ---
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', handleLogin);
-        const registerForm = document.getElementById('register-form');
-        if(registerForm) registerForm.addEventListener('submit', handleRegister);
+        const regForm = document.getElementById('register-form');
+        if(regForm) regForm.addEventListener('submit', handleRegister);
         
         document.getElementById('show-register-btn').addEventListener('click', (e) => {
             e.preventDefault();
@@ -90,41 +91,51 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- PERFIL.HTML ---
+    // --- PERFIL ---
     if (path.includes('perfil.html')) {
-        if (localStorage.getItem('isLoggedIn') !== 'true') {
-            window.location.href = 'login.html';
-        }
+        if (localStorage.getItem('isLoggedIn') !== 'true') window.location.href = 'login.html';
+    }
+    
+    // --- LOGOUT MODAL LISTENER ---
+    const btnConfirmLogout = document.getElementById("confirm-logout");
+    if (btnConfirmLogout) {
+        btnConfirmLogout.addEventListener("click", () => {
+            handleLogout();
+        });
     }
 });
 
 
 // =========================================
-//  LÓGICA DEL CARRITO 
+//  LÓGICA DEL CARRITO (SIN CANTIDADES)
 // =========================================
 
 function addToCart(id) {
-    // ENCONTRAR PRODUCTO
     const prod = PRODUCTOS.find(p => String(p.id) === String(id));
     if (!prod) return;
 
-    // VERIFICAR SI YA EXISTE EN CARRITO
-    const itemEnCarrito = CARRITO.find(item => String(item.id) === String(id));
-    if (itemEnCarrito) {
-        itemEnCarrito.qty++;
+    // Verificar si ya existe
+    const existe = CARRITO.find(item => String(item.id) === String(id));
+    
+    if (existe) {
+        // NO SUMAMOS CANTIDAD, SOLO AVISAMOS
+        showAuthMessage(`¡"${prod.name}" ya está en tu carrito!`, 'warning');
+        setTimeout(() => clearSystemMessage(), 2000);
     } else {
+        // AGREGAR PRODUCTO (Cantidad fija: 1)
         CARRITO.push({ ...prod, qty: 1 });
-    }
-
-    // GUARDAMOS EN LOCALSTORAGE
-    localStorage.setItem('myCart', JSON.stringify(CARRITO));
-
-    // MENSAJE DE FEEDBACK
-    const feedback = document.getElementById('cart-feedback');
-    if(feedback) {
-        feedback.textContent = `¡"${prod.name}" añadido al carrito!`;
-        feedback.classList.remove('d-none');
-        setTimeout(() => feedback.classList.add('d-none'), 2000);
+        localStorage.setItem('myCart', JSON.stringify(CARRITO));
+        
+        // Mensaje de éxito
+        const feedback = document.getElementById('cart-feedback');
+        if(feedback) {
+            feedback.textContent = `¡"${prod.name}" añadido!`;
+            feedback.classList.remove('d-none');
+            setTimeout(() => feedback.classList.add('d-none'), 2000);
+        } else {
+            showAuthMessage(`Agregado: ${prod.name}`, 'success');
+            setTimeout(() => clearSystemMessage(), 1500);
+        }
     }
 }
 
@@ -146,29 +157,22 @@ function renderCartPage() {
     let totalGlobal = 0;
 
     CARRITO.forEach(item => {
-        const subtotal = item.price * item.qty;
-        totalGlobal += subtotal;
+        const precio = item.price; 
+        totalGlobal += precio;
 
+        // TABLA SIN BOTONES NI SUBTOTAL, SOLO PRECIO Y BASURA
         tbody.innerHTML += `
             <tr>
                 <td class="ps-4">
                     <div class="d-flex align-items-center">
-                        <img src="${item.image}" alt="img" class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                        <img src="${item.image}" class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
                         <div>
-                            <p class="mb-0 fw-bold text-dark text-truncate" style="max-width: 200px;">${item.name}</p>
+                            <p class="mb-0 fw-bold text-dark text-truncate" style="max-width: 250px;">${item.name}</p>
                             <small class="text-muted">${item.category}</small>
                         </div>
                     </div>
                 </td>
-                <td>$${item.price.toFixed(2)}</td>
-                <td>
-                    <div class="input-group input-group-sm" style="width: 100px;">
-                        <button class="btn btn-outline-secondary" onclick="changeQty('${item.id}', -1)">-</button>
-                        <input type="text" class="form-control text-center bg-white" value="${item.qty}" readonly>
-                        <button class="btn btn-outline-secondary" onclick="changeQty('${item.id}', 1)">+</button>
-                    </div>
-                </td>
-                <td class="fw-bold">$${subtotal.toFixed(2)}</td>
+                <td class="fw-bold">$${precio.toFixed(2)}</td>
                 <td class="pe-4 text-end">
                     <button class="btn btn-link text-danger p-0" onclick="removeFromCart('${item.id}')">
                         <i class="bi bi-trash-fill fs-5"></i>
@@ -180,19 +184,6 @@ function renderCartPage() {
 
     document.getElementById('cart-subtotal').textContent = `$${totalGlobal.toFixed(2)}`;
     document.getElementById('cart-total').textContent = `$${totalGlobal.toFixed(2)}`;
-}
-
-function changeQty(id, delta) {
-    const item = CARRITO.find(i => String(i.id) === String(id));
-    if (item) {
-        item.qty += delta;
-        if (item.qty <= 0) {
-            removeFromCart(id);
-            return;
-        }
-        localStorage.setItem('myCart', JSON.stringify(CARRITO));
-        renderCartPage(); 
-    }
 }
 
 function removeFromCart(id) {
@@ -207,7 +198,7 @@ function checkout() {
         setTimeout(() => window.location.href = 'login.html', 2000);
         return;
     }
-    showAuthMessage('¡Compra realizada con éxito!', 'success');
+    showAuthMessage('¡Compra realizada con éxito! Gracias.', 'success');
     CARRITO = [];
     localStorage.removeItem('myCart');
     setTimeout(() => window.location.href = 'index.html', 2000);
@@ -215,9 +206,8 @@ function checkout() {
 
 
 // =========================================
-//  FUNCIONES DE AUTH
+//  AUTH HELPERS
 // =========================================
-
 function showAuthMessage(mensaje, tipo) {
     const msgDiv = document.getElementById('system-message');
     if (msgDiv) {
@@ -226,7 +216,6 @@ function showAuthMessage(mensaje, tipo) {
         msgDiv.classList.remove('d-none');
     }
 }
-
 function clearSystemMessage() {
     const msgDiv = document.getElementById('system-message');
     if (msgDiv) msgDiv.classList.add('d-none');
@@ -254,13 +243,13 @@ function handleRegister(e) {
     const email = document.getElementById('register-username').value;
     const pass = document.getElementById('register-password').value;
     if (USUARIOS_REGISTRADOS.find(u => u.email === email)) {
-        showAuthMessage('Este correo ya está registrado.', 'warning');
+        showAuthMessage('Email ya registrado.', 'warning');
         return;
     }
     const nombre = email.split('@')[0];
     USUARIOS_REGISTRADOS.push({ email, password: pass, name: nombre });
     localStorage.setItem('registeredUsers', JSON.stringify(USUARIOS_REGISTRADOS));
-    showAuthMessage('¡Cuenta creada con éxito! Ahora inicia sesión.', 'success');
+    showAuthMessage('¡Registrado!', 'success');
     document.getElementById('register-form').reset();
     setTimeout(() => {
         document.getElementById('register-form-container').classList.add('d-none');
@@ -300,9 +289,8 @@ function updateAuthUI() {
 
 
 // =========================================
-//  FUNCIONES DE PRODUCTOS 
+//  CATALOGO Y PRODUCTOS
 // =========================================
-
 async function fetchRAWGProducts() {
     if (PRODUCTOS.length > 20) return;
 
@@ -312,7 +300,7 @@ async function fetchRAWGProducts() {
         const res = await fetch(URL);
         const data = await res.json();
 
-        // NUESTRAS IMÁGENES PERSONALIZADAS
+        // TUS IMÁGENES PERSONALIZADAS
         const misImagenes = {
             "Play Drift Boss game online": "./images/driftboss.png",
             "White Heaven":   "./images/whiteheaven.jpg",
@@ -322,7 +310,6 @@ async function fetchRAWGProducts() {
             "test test game": "./images/ttg.jpg"
         };
 
-        // AQUI LAS USAMOS EN EL MAP
         const nuevos = data.results.map(game => ({
             id: `RAWG-${game.id}`,
             name: game.name,
@@ -333,16 +320,11 @@ async function fetchRAWGProducts() {
         }));
 
         PRODUCTOS.push(...nuevos);
-
-    } catch (e) { 
-        console.error("Error API", e); 
-    }
+    } catch (e) { console.error("Error API", e); }
 }
 
-
-
 function createProductCard(p) {
-    // --- ESTA ES LA CARD DE LOS PRODUCTOS ---
+    // CARD ORIGINAL DEL CATALOGO
     return `
       <div class="col">
         <div class="card h-100 shadow-sm border-0">
@@ -403,7 +385,6 @@ function renderProductDetail(id) {
         }
     }
     
-    // --- AQUÍ CONECTAMOS EL BOTÓN DE "Añadir a la Cesta" CON LA FUNCIÓN ---
     const btnCart = document.getElementById('add-to-cart');
     const newBtn = btnCart.cloneNode(true); 
     btnCart.parentNode.replaceChild(newBtn, btnCart);
@@ -418,16 +399,3 @@ function closeDetailView() {
     document.getElementById('catalogo-view').classList.remove('d-none');
     applyFilters(); 
 }
-
-// confirmacion de logout
-
-document.addEventListener("DOMContentLoaded", () => {
-    const btnConfirmLogout = document.getElementById("confirm-logout");
-
-    if (btnConfirmLogout) {
-        btnConfirmLogout.addEventListener("click", () => {
-            // Ejecuta tu función original
-            handleLogout();
-        });
-    }
-});
