@@ -4,6 +4,8 @@
    ========================================= */
 
 // --- CONSTANTES Y DATOS MOCK ---
+
+//constante con los productos que tenemos localmente
 const PRODUCTOS = [
   { id: 1, name: "Consola PS4 Death Stranding", category: "consolas", price: 4200.00, desc: "Consola playstation 4 edicion especial death stranding", image: "./images/dsps4.png" },
   { id: 2, name: "Si el amor es una isla", category: "libros", price: 350.50, desc: "Edición de tapa dura con ilustraciones.", image: "./images/amorisla.jpg" },
@@ -25,6 +27,7 @@ const PRODUCTOS = [
 ];
 
 const RAWG_API_KEY = "440d1bf1d0fc4b8ab796d650dce689bb"; 
+//placeholder para juegos sin imagen
 const PLACEHOLDER_IMAGE = "https://placehold.co/300x180?text=No+Image";
 
 // CARGAR DATOS
@@ -71,12 +74,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- LOGIN ---
+    //detectar el formulario de login y registro
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', handleLogin);
         const regForm = document.getElementById('register-form');
         if(regForm) regForm.addEventListener('submit', handleRegister);
         
+        // Botones para alternar entre login y registro
         document.getElementById('show-register-btn').addEventListener('click', (e) => {
             e.preventDefault();
             document.getElementById('login-form-container').classList.add('d-none');
@@ -92,11 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- PERFIL ---
+    // Redirigir a login si no está autenticado
     if (path.includes('perfil.html')) {
         if (localStorage.getItem('isLoggedIn') !== 'true') window.location.href = 'login.html';
     }
     
     // --- LOGOUT MODAL LISTENER ---
+    // Confirmar cierre de sesión
     const btnConfirmLogout = document.getElementById("confirm-logout");
     if (btnConfirmLogout) {
         btnConfirmLogout.addEventListener("click", () => {
@@ -107,9 +114,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 // =========================================
-//  LÓGICA DEL CARRITO (SIN CANTIDADES)
+//  LÓGICA DEL CARRITO
 // =========================================
 
+// Agregar producto al carrito
 function addToCart(id) {
     const prod = PRODUCTOS.find(p => String(p.id) === String(id));
     if (!prod) return;
@@ -129,38 +137,44 @@ function addToCart(id) {
         // Mensaje de éxito
         const feedback = document.getElementById('cart-feedback');
         if(feedback) {
+            // Mensaje específico en la página de detalles
             feedback.textContent = `¡"${prod.name}" añadido!`;
             feedback.classList.remove('d-none');
             setTimeout(() => feedback.classList.add('d-none'), 2000);
         } else {
+            // Mensaje global si no hay feedback específico
             showAuthMessage(`Agregado: ${prod.name}`, 'success');
             setTimeout(() => clearSystemMessage(), 1500);
         }
     }
 }
 
+// Renderizar la página del carrito 
 function renderCartPage() {
     const emptyView = document.getElementById('cart-empty-view');
     const itemsView = document.getElementById('cart-items-view');
     const tbody = document.getElementById('cart-table-body');
     
+    // Si el carrito está vacío
     if (CARRITO.length === 0) {
         emptyView.classList.remove('d-none');
         itemsView.classList.add('d-none');
         return;
     }
 
+    // Si hay items en el carrito
     emptyView.classList.add('d-none');
     itemsView.classList.remove('d-none');
     tbody.innerHTML = '';
     
     let totalGlobal = 0;
 
+    // Recorrer los items del carrito
     CARRITO.forEach(item => {
         const precio = item.price; 
         totalGlobal += precio;
 
-        // TABLA SIN BOTONES NI SUBTOTAL, SOLO PRECIO Y BASURA
+        // Agregar fila a la tabla
         tbody.innerHTML += `
             <tr>
                 <td class="ps-4">
@@ -182,22 +196,27 @@ function renderCartPage() {
         `;
     });
 
+    // Actualizar totales
     document.getElementById('cart-subtotal').textContent = `$${totalGlobal.toFixed(2)}`;
     document.getElementById('cart-total').textContent = `$${totalGlobal.toFixed(2)}`;
 }
 
+// Eliminar producto del carrito
 function removeFromCart(id) {
     CARRITO = CARRITO.filter(i => String(i.id) !== String(id));
     localStorage.setItem('myCart', JSON.stringify(CARRITO));
     renderCartPage();
 }
 
+// Finalizar compra
 function checkout() {
     if (localStorage.getItem('isLoggedIn') !== 'true') {
+        // Usuario no autenticado
         showAuthMessage('Debes iniciar sesión para finalizar.', 'warning');
         setTimeout(() => window.location.href = 'login.html', 2000);
         return;
     }
+    // Compra exitosa
     showAuthMessage('¡Compra realizada con éxito! Gracias.', 'success');
     CARRITO = [];
     localStorage.removeItem('myCart');
@@ -206,8 +225,10 @@ function checkout() {
 
 
 // =========================================
-//  AUTH HELPERS
+//  AUTH HELPERS 
 // =========================================
+
+// Mostrar mensajes de autenticación
 function showAuthMessage(mensaje, tipo) {
     const msgDiv = document.getElementById('system-message');
     if (msgDiv) {
@@ -216,56 +237,72 @@ function showAuthMessage(mensaje, tipo) {
         msgDiv.classList.remove('d-none');
     }
 }
+// Limpiar mensaje del sistema
 function clearSystemMessage() {
     const msgDiv = document.getElementById('system-message');
     if (msgDiv) msgDiv.classList.add('d-none');
 }
 
+// Manejar login
 function handleLogin(e) {
+    // Prevenir envío del formulario
     e.preventDefault();
+    // Obtener credenciales
     const email = document.getElementById('login-username').value;
     const pass = document.getElementById('login-password').value;
     const user = USUARIOS_REGISTRADOS.find(u => u.email === email && u.password === pass);
 
+    // Si el usuario existe
     if (user) {
+        // Guardar estado en localStorage
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userName', user.name);
         localStorage.setItem('userEmail', user.email);
-        showAuthMessage(`¡Hola de nuevo, ${user.name}! Redirigiendo...`, 'success');
+        // Mensaje de bienvenida
+        showAuthMessage(`Hola de nuevo, ${user.name}! Redirigiendo...`, 'success');
+        // Redirigir después de 1.5 segundos
         setTimeout(() => { window.location.href = 'index.html'; }, 1500);
     } else {
+        // Credenciales incorrectas
         showAuthMessage('Correo o contraseña incorrectos.', 'danger');
     }
 }
 
 function handleRegister(e) {
+    // Prevenir envío del formulario
     e.preventDefault();
+    // Obtener datos del formulario
     const email = document.getElementById('register-username').value;
     const pass = document.getElementById('register-password').value;
+    // Verificar si el email ya está registrado
     if (USUARIOS_REGISTRADOS.find(u => u.email === email)) {
         showAuthMessage('Email ya registrado.', 'warning');
         return;
     }
-    const nombre = email.split('@')[0];
-    USUARIOS_REGISTRADOS.push({ email, password: pass, name: nombre });
-    localStorage.setItem('registeredUsers', JSON.stringify(USUARIOS_REGISTRADOS));
+    // Registrar nuevo usuario
+    const nombre = email.split('@')[0]; // Nombre por defecto
+    USUARIOS_REGISTRADOS.push({ email, password: pass, name: nombre }); // Agregar usuario
+    localStorage.setItem('registeredUsers', JSON.stringify(USUARIOS_REGISTRADOS)); // Guardar en localStorage
+    // Mensaje de éxito y redirigir a login
     showAuthMessage('¡Registrado!', 'success');
     document.getElementById('register-form').reset();
     setTimeout(() => {
+        // Volver al formulario de login
         document.getElementById('register-form-container').classList.add('d-none');
         document.getElementById('login-form-container').classList.remove('d-none');
         clearSystemMessage();
-    }, 2000);
+    }, 2000); // Esperar 2 segundos antes de cambiar
 }
 
+// Manejar logout
 function handleLogout() {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
-    window.location.href = 'index.html';
+    localStorage.removeItem('userEmail');// Limpiar estado de autenticación con los datos 
+    window.location.href = 'index.html'; // Redirigir al inicio
 }
 
-function updateAuthUI() {
+function updateAuthUI() { // Actualizar la UI según el estado de autenticación para mostrar o ocultar lo de perfil
     const isLog = localStorage.getItem('isLoggedIn') === 'true';
     const name = localStorage.getItem('userName') || 'Invitado';
     const loggedInDiv = document.getElementById('auth-links-logged-in');
@@ -274,12 +311,14 @@ function updateAuthUI() {
 
     if(loggedInDiv) {
         if(isLog) {
+            // Si el usuario esta logueado muestrar saludo y opciones de perfil
             loggedInDiv.classList.remove('d-none');
             if(loggedOutDiv) loggedOutDiv.classList.add('d-none');
             const greeting = document.getElementById('user-greeting');
             if(greeting) greeting.textContent = `Hola, ${name}`;
             if(navPerfil) navPerfil.classList.remove('d-none');
         } else {
+            // Si no esta logueado mostrar opciones de login/registro
             loggedInDiv.classList.add('d-none');
             if(loggedOutDiv) loggedOutDiv.classList.remove('d-none');
             if(navPerfil) navPerfil.classList.add('d-none');
@@ -291,6 +330,8 @@ function updateAuthUI() {
 // =========================================
 //  CATALOGO Y PRODUCTOS
 // =========================================
+
+// Obtener productos desde la API RAWG
 async function fetchRAWGProducts() {
     if (PRODUCTOS.length > 20) return;
 
@@ -300,7 +341,7 @@ async function fetchRAWGProducts() {
         const res = await fetch(URL);
         const data = await res.json();
 
-        // TUS IMÁGENES PERSONALIZADAS
+        // Estas son nuestras imagenes locales para algunos juegos (los que no fueron encontrados bien por la API)
         const misImagenes = {
             "Play Drift Boss game online": "./images/driftboss.png",
             "White Heaven":   "./images/whiteheaven.jpg",
@@ -310,6 +351,7 @@ async function fetchRAWGProducts() {
             "test test game": "./images/ttg.jpg"
         };
 
+        // Mapear los juegos obtenidos a nuestro formato de producto
         const nuevos = data.results.map(game => ({
             id: `RAWG-${game.id}`,
             name: game.name,
@@ -319,12 +361,13 @@ async function fetchRAWGProducts() {
             image: misImagenes[game.name] || game.background_image || PLACEHOLDER_IMAGE
         }));
 
+        // Agregar los nuevos productos al array global
         PRODUCTOS.push(...nuevos);
     } catch (e) { console.error("Error API", e); }
 }
 
 function createProductCard(p) {
-    // CARD ORIGINAL DEL CATALOGO
+    // Crear la tarjeta HTML para los productos
     return `
       <div class="col">
         <div class="card h-100 shadow-sm border-0">
@@ -340,20 +383,24 @@ function createProductCard(p) {
     `;
 }
 
+// Renderizar productos destacados en el index (destacados para ti)
 function renderFeaturedProducts() {
     const container = document.getElementById('featured-products-container');
     if (container) container.innerHTML = PRODUCTOS.slice(0, 4).map(createProductCard).join('');
 }
 
+// Aplicar filtros y ordenamientos en el catálogo (cuando quieras ordenar por categoria o orden)
 function applyFilters() {
     const catSelect = document.getElementById('filter-category');
     const sortSelect = document.getElementById('filter-sort');
     const container = document.getElementById('products-container');
     
+    // Validar elementos
     if(!catSelect || !container) return;
     const cat = catSelect.value;
     const sort = sortSelect.value;
     
+    // Filtrar y ordenar productos
     let filtered = PRODUCTOS.filter(p => cat === 'todos' ? true : p.category === cat);
     if (sort === 'asc') filtered.sort((a, b) => a.price - b.price);
     if (sort === 'desc') filtered.sort((a, b) => b.price - a.price);
@@ -361,8 +408,11 @@ function applyFilters() {
     container.innerHTML = filtered.map(createProductCard).join('') || '<p class="text-center w-100 p-4">Sin resultados.</p>';
 }
 
+
+// Renderizar vista de detalle de producto
 function renderProductDetail(id) {
     const p = PRODUCTOS.find(prod => String(prod.id) === String(id));
+    // Si no se encuentra el producto, redirigir al catálogo
     if (!p) { window.location.href = 'catalogo.html'; return; }
 
     const catalogoView = document.getElementById('catalogo-view');
@@ -370,6 +420,8 @@ function renderProductDetail(id) {
     if(catalogoView) catalogoView.classList.add('d-none');
     if(detalleView) detalleView.classList.remove('d-none');
 
+
+    // Rellenar detalles del producto con toda la informacion y sus datos
     document.getElementById('detalle-image').src = p.image;
     document.getElementById('detalle-title').textContent = p.name;
     document.getElementById('detalle-category').textContent = p.category;
@@ -385,12 +437,14 @@ function renderProductDetail(id) {
         }
     }
     
+    // Configurar botón de agregar al carrito
     const btnCart = document.getElementById('add-to-cart');
     const newBtn = btnCart.cloneNode(true); 
     btnCart.parentNode.replaceChild(newBtn, btnCart);
     newBtn.addEventListener('click', () => addToCart(p.id));
 }
 
+// Cerrar vista de detalle y volver al catálogo
 function closeDetailView() {
     const url = new URL(window.location);
     url.searchParams.delete('id');
