@@ -1,11 +1,11 @@
-/* CÓDIGO CSS SOLAMENTE: styles.css */
+
 
 /* Estilo general del cuerpo de la página */
 body {
     font-family: 'Inter', sans-serif;
 }
 
-/* Estilos para el Carrusel/Overlay (Preexistentes) */
+/* Estilos para el Carrusel*/
 .slide-overlay-html {
     /* Ajustes para el fondo del texto si es necesario, aunque Bootstrap ya usa un degradado */
     background: rgba(0, 0, 0, 0.5); 
@@ -48,3 +48,17 @@ body {
     max-height: 400px;
     object-fit: cover;
 }
+
+.hero-about {
+    background-image: url('../images/happy.png'); 
+    background-size: cover;
+    background-position: center; 
+    background-repeat: no-repeat;
+    min-height: 400px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+

@@ -40,14 +40,14 @@
                         <button class="btn btn-danger btn-sm rounded-pill fw-medium" data-bs-toggle="modal" data-bs-target="#logoutModal">
                             Salir
                         </button>
-
                     </div>
                 </div>
             </div>
         </div>
     </header>
+
     <div class="hero-about text-center">
-        <div class="container">
+        <div class="container hero-text-box">
             <h1 class="display-3 fw-bolder">Nuestra Historia</h1>
             <p class="lead mt-3">Donde la pasión por los videojuegos, el tejido y los coleccionables se unen.</p>
         </div>
@@ -68,16 +68,17 @@
                         Nos dimos cuenta de que muchas tiendas se enfocaban en un solo nicho, obligándonos a saltar de un sitio a otro. ¿Por qué no crear un lugar donde convivan la última consola, un patrón de amigurumi y el snack perfecto para acompañar la lectura?
                     </p>
                 </div>
-                <div class="col-lg-6">
-                    
+                
+                <div class="col-lg-6 text-center">
+                    <img src="images/amigas.jpg" alt="Creadoras del sitio web" class="img-amigas img-fluid">
                 </div>
             </div>
         </div>
     </section>
     
-    <hr class="my-5">
+    <hr class="my-5 opacity-25">
 
-    <section class="py-5 bg-light">
+    <section class="py-5">
         <div class="container text-center">
             <h2 class="fw-bold mb-5">Nuestra Promesa: Un Estante de Felicidad</h2>
             <div class="row">
@@ -116,7 +117,6 @@
 
     <script>
         function handleLogout() {
-            // Lógica para cerrar sesión (ej. limpiar localStorage y recargar)
             localStorage.removeItem('isLoggedIn');
             localStorage.removeItem('userName');
             window.location.reload(); 
